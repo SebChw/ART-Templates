@@ -1,4 +1,7 @@
+import albumentations as A
 import lightning.pytorch as pl
+import numpy as np
+import PIL
 from torch.utils.data import DataLoader
 
 
@@ -7,6 +10,12 @@ class MNISTDataModule(pl.LightningDataModule):
     def __init__(self, dataset):
         super().__init__()
         self.dataset = dataset.with_format("torch")
+
+        self.transform = A.Compose(
+            [
+                A.GaussNoise(var_limit=(1, 5), p=0.1),
+            ]
+        )
 
     def prepare_data_per_node(self):
         pass
@@ -20,9 +29,18 @@ class MNISTDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(self.dataset["train"], batch_size=16)
 
-    def turn_on_regularization(self):
-        """But in case of dataset it is probably better to put this on the user."""
-        return self
+    def batch_transform(self, batch):
+        new_input = [
+            self.transform(image=np.asarray(img))["image"]
+            for img in batch["input"]
+            # np.asarray(img)
+            # for img in batch["input"]
+        ]
+        return {"input": new_input, "target": batch["target"]}
 
-    def turn_off_regularization(self):
+    def turn_on_regularizations(self):
+        """But in case of dataset it is probably better to put this on the user."""
+        self.dataset.set_transform(self.batch_transform)
+
+    def turn_off_regularizations(self):
         pass

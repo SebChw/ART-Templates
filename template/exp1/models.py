@@ -17,7 +17,7 @@ from art.experiment_state import ExperimentState
 
 
 class MNISTModel(ArtModule):
-    def __init__(self, lr=0.001):
+    def __init__(self, lr=0.001, normalize_img=False):
         super().__init__()
         self.model = nn.Sequential(
             nn.Conv2d(1, 8, 3, 1, "same"),
@@ -31,9 +31,12 @@ class MNISTModel(ArtModule):
         )  # model
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
+        self.normalize_img = normalize_img
 
     def parse_data(self, data):
-        X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float() / 255
+        X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float()
+        if self.normalize_img:
+            X /= 255
         return {INPUT: X, TARGET: data[BATCH][TARGET]}
 
     def predict(self, data):
