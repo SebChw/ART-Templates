@@ -1,0 +1,1 @@
+{"MulticlassAccuracy-MNISTModel-TRAIN-Overfit": 0.9649999737739563, "CrossEntropyLoss-MNISTModel-TRAIN-Overfit": 0.362356036901474, "MulticlassAccuracy-MNISTModel-VALIDATION-Overfit": 0.6219000220298767, "CrossEntropyLoss-MNISTModel-VALIDATION-Overfit": 1.1112624406814575}
