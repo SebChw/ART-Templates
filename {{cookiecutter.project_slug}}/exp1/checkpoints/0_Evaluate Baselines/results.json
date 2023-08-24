@@ -1,0 +1,1 @@
+{"Heuristic Baseline": [{"MulticlassAccuracy-HeuristicBaseline-TRAIN-Evaluate Baselines": 0.5163999795913696}], "ML Baseline": [{"MulticlassAccuracy-MlBaseline-TRAIN-Evaluate Baselines": 0.6563000082969666}], "Already Existing Solution Baseline": [{"MulticlassAccuracy-AlreadyExistingSolutionBaseline-TRAIN-Evaluate Baselines": 0.9883000254631042}]}
