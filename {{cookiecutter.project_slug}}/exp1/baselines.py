@@ -1,71 +1,94 @@
+from typing import Dict
+
 import numpy as np
-from datasets import Dataset
-from torchmetrics import Accuracy
+from einops import rearrange
 
-from art.core.base_components.BaseModel import Baseline
+from art.core import ArtModule
+from art.enums import BATCH, INPUT, PREDICTION, TARGET
 
 
-class MlBaseline(Baseline):
+class MlBaseline(ArtModule):
+    name = "ML Baseline"
+
     def __init__(self, model):
-        super().__init__(accelerator="cpu")
+        super().__init__()  # device="cpu")
         self.model = model
-        self.name = "MlBaseline"
 
-    # prepare_data name is taken by lightning
-    def create_data(self, dataloader):
-        # TODO it should always return X,y as numpy arrays
-        # Taka generalna funkcje prepare data dla MlBaseline powinnismy przygotowac
+    def ml_parse_data(self, data):
         X = []
         y = []
-        for batch in dataloader:
-            X.append(batch["x"])
-            y.append(batch["y"])
+        for batch in data["dataloader"]:
+            X.append(batch[INPUT].flatten(start_dim=1).numpy() / 255)
+            y.append(batch[TARGET].numpy())
 
-        return np.concatenate(X), np.concatenate(y)
+        return {INPUT: np.concatenate(X), TARGET: np.concatenate(y)}
 
-    # train has conflicts with lightning
-    def train_baseline(self, train_data):
-        # raise NotImplementedError
+    def baseline_train(self, data):
+        self.model = self.model.fit(data[INPUT], data[TARGET])
+        return {"model": self.model}
 
-        #! Idea jest taka, ze w tym miejscu kazdy dostaje X, y i robi sobie z nim zo zechce
-        X, y = self.create_data(train_data)
+    def parse_data(self, data):
+        # TODO PARSE DATA IS ALMOST ALWAYS THE SAME
+        """This is first step of your pipeline it always has batch keys inside"""
+        batch = data[BATCH]
+        return {
+            INPUT: batch[INPUT].flatten(start_dim=1).numpy(),
+            TARGET: batch[TARGET].numpy(),
+        }
 
-        # TO jest customowy kod napisany przez usera
-        self.model = self.model.fit(X, y)
-
-    def validation_step(self, batch, batch_idx):
-        # raise NotImplementedError
-        # TODO: even in MLModel we should do this in batch mode.
-        x, y = batch["x"], batch["y"]
-
-        predictions = self.model.predict(x)
-
-        # TODO We should probably make all used metrics somehow reusable within different stages.
-        self.metric(self, predictions, y)
+    def predict(self, data):
+        return {PREDICTION: self.model.predict(data[INPUT]), TARGET: data[TARGET]}
 
 
-class HeuristicBaseline(Baseline):
+class HeuristicBaseline(ArtModule):
+    name = "Heuristic Baseline"
+    n_classes = 10
+    img_shape = (28, 28)
+
     def __init__(self):
-        super().__init__(accelerator="cpu")
-        self.name = "HeuristicBaseline"
+        super().__init__()
 
-    def train_baseline(self, train_data):
-        """Initialize already existing solution"""
-        pass
+    def parse_data(self, data):
+        """This is first step of your pipeline it always has batch keys inside"""
+        batch = data[BATCH]
+        return {
+            INPUT: batch[INPUT].flatten(start_dim=1).numpy(),
+            TARGET: batch[TARGET].numpy(),
+        }
 
-    def validation_step(self, batch, batch_idx):
-        # raise NotImplementedError
-        x, y = batch["x"], batch["y"]
+    def baseline_train(self, data):
+        self.prototypes = np.zeros(
+            (self.n_classes, self.img_shape[0] * self.img_shape[1])
+        )
+        self.counts = np.zeros(self.n_classes)
+        for batch in data["dataloader"]:
+            for img, label in zip(batch[INPUT], batch[TARGET]):
+                self.prototypes[label.item()] += img.flatten().numpy() / 255
+                self.counts[label.item()] += 1
 
-        predictions = np.full(x.shape[0], 0)
+        self.prototypes = self.prototypes / self.counts[:, None]
 
-        # TODO We should probably make all used metrics somehow reusable within different stages.
-        self.metric(self, predictions, y)
+    def predict(self, data):
+        y_hat = np.argmax((data[INPUT] @ self.prototypes.T), axis=1)
+        return {PREDICTION: y_hat, TARGET: data[TARGET]}
 
 
-class AlreadyExistingSolutionBaseline(Baseline):
-    def train(self, data):
-        """Initialize already existing solution"""
+class AlreadyExistingSolutionBaseline(ArtModule):
+    name = "Already Existing Solution Baseline"
 
-    def validation_step(self, batch, batch_idx):
-        """Add it here"""
+    def __init__(self):
+        from transformers import ResNetForImageClassification
+
+        super().__init__()
+        self.model = ResNetForImageClassification.from_pretrained(
+            "sebchw/MNIST_Existing_Baseline"
+        )
+
+    def parse_data(self, data):
+        X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float()
+        X = (X / 255 - 0.45) / 0.22
+        return {INPUT: X, TARGET: data[BATCH][TARGET]}
+
+    def predict(self, data: Dict):
+        preds = np.argmax(self.model(data[INPUT]).logits.detach().numpy(), axis=1)
+        return {PREDICTION: preds, TARGET: data[TARGET]}

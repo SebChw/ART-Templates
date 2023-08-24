@@ -1,0 +1,26 @@
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.152 σ=74.955 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=3.438 σ=2.502 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.706 σ=78.819 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.312 σ=3.071 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=29.430 σ=74.025 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.562 σ=3.076 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=36.037 σ=81.303 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.438 σ=3.265 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.125 σ=75.296 cuda:0, 'target': tensor[16] i64 x∈[0, 7] μ=2.812 σ=2.613 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=35.792 σ=80.639 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.938 σ=3.172 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=28.964 σ=73.733 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.000 σ=2.966 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=35.798 σ=81.245 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=2.938 σ=3.043 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=29.848 σ=74.876 cuda:0, 'target': tensor[16] i64 x∈[1, 9] μ=4.500 σ=2.394 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.929 σ=75.213 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.250 σ=2.817 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.089 σ=78.519 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.250 σ=3.044 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.040 σ=78.289 cuda:0, 'target': tensor[16] i64 x∈[1, 9] μ=4.188 σ=2.834 cuda:0}
+WARNING:root:{'input': tensor[8, 1, 28, 28] n=6272 (24Kb) x∈[0., 255.000] μ=34.555 σ=79.825 cuda:0, 'target': tensor[8] i64 x∈[0, 9] μ=5.000 σ=3.207 cuda:0 [0, 7, 4, 9, 7, 8, 3, 2]}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.152 σ=74.955 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=3.438 σ=2.502 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.706 σ=78.819 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.312 σ=3.071 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=29.430 σ=74.025 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.562 σ=3.076 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=36.037 σ=81.303 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.438 σ=3.265 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.125 σ=75.296 cuda:0, 'target': tensor[16] i64 x∈[0, 7] μ=2.812 σ=2.613 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=35.792 σ=80.639 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.938 σ=3.172 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=28.964 σ=73.733 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=4.000 σ=2.966 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=35.798 σ=81.245 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=2.938 σ=3.043 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=29.848 σ=74.876 cuda:0, 'target': tensor[16] i64 x∈[1, 9] μ=4.500 σ=2.394 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=30.929 σ=75.213 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.250 σ=2.817 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.089 σ=78.519 cuda:0, 'target': tensor[16] i64 x∈[0, 9] μ=5.250 σ=3.044 cuda:0}
+WARNING:root:{'input': tensor[16, 1, 28, 28] n=12544 (49Kb) x∈[0., 255.000] μ=33.040 σ=78.289 cuda:0, 'target': tensor[16] i64 x∈[1, 9] μ=4.188 σ=2.834 cuda:0}
+WARNING:root:{'input': tensor[8, 1, 28, 28] n=6272 (24Kb) x∈[0., 255.000] μ=34.555 σ=79.825 cuda:0, 'target': tensor[8] i64 x∈[0, 9] μ=5.000 σ=3.207 cuda:0 [0, 7, 4, 9, 7, 8, 3, 2]}
