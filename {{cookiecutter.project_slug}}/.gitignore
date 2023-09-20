@@ -100,3 +100,6 @@ instance/
 *.bak
 *.tmp
 # TODO: Add more patterns based on your specific needs
+checkpoints
+lightning_logs
+*.pyc

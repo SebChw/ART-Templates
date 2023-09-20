@@ -13,7 +13,6 @@ from art.enums import (
     TRAIN_LOSS,
     VALIDATION_LOSS,
 )
-from art.experiment_state import ExperimentState
 
 
 class MNISTModel(ArtModule):
