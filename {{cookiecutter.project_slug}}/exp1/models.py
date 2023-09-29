@@ -4,7 +4,7 @@ from einops import rearrange
 from einops.layers.torch import Reduce
 
 from art.core.base_components.base_model import ArtModule
-from art.enums import (
+from art.utils.enums import (
     BATCH,
     INPUT,
     LOSS,
