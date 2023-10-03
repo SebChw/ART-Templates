@@ -103,3 +103,4 @@ instance/
 checkpoints
 lightning_logs
 *.pyc
+.neptune
