@@ -104,3 +104,5 @@ checkpoints
 lightning_logs
 *.pyc
 .neptune
+debug_art.log
+*.png
