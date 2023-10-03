@@ -4,7 +4,7 @@ import numpy as np
 from einops import rearrange
 
 from art.core import ArtModule
-from art.enums import BATCH, INPUT, PREDICTION, TARGET
+from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
 
 
 class MlBaseline(ArtModule):
