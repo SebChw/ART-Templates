@@ -1,6 +1,6 @@
 import albumentations as A
 import numpy as np
-import pytorch_lightning as L
+import lightning as L
 from torch.utils.data import DataLoader
 
 
