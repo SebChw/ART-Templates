@@ -90,5 +90,5 @@ class AlreadyExistingSolutionBaseline(ArtModule):
         return {INPUT: X, TARGET: data[BATCH][TARGET]}
 
     def predict(self, data: Dict):
-        preds = np.argmax(self.model(data[INPUT]).logits.detach().numpy(), axis=1)
+        preds = self.model(data[INPUT]).logits.detach().numpy()
         return {PREDICTION: preds, TARGET: data[TARGET]}

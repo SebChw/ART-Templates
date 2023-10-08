@@ -1,12 +1,11 @@
 import albumentations as A
-import lightning.pytorch as pl
+import lightning as L
 import numpy as np
-import PIL
 from torch.utils.data import DataLoader
 
 
 # I wonder if we need anything more than LightningDataModule
-class MNISTDataModule(pl.LightningDataModule):
+class MNISTDataModule(L.LightningDataModule):
     def __init__(self, dataset):
         super().__init__()
         self.dataset = dataset.with_format("torch")
