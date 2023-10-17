@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 from einops import rearrange
 
-from art.core import ArtModule
+from art.core.base_components.base_model import ArtModule
 from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
 
 
