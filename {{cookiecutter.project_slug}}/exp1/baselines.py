@@ -39,6 +39,9 @@ class MlBaseline(ArtModule):
     def predict(self, data):
         return {PREDICTION: self.model.predict(data[INPUT]), TARGET: data[TARGET]}
 
+    def log_params(self):
+        return {"model": self.model.__class__.__name__}
+
 
 class HeuristicBaseline(ArtModule):
     name = "Heuristic Baseline"
@@ -72,6 +75,9 @@ class HeuristicBaseline(ArtModule):
         y_hat = np.argmax((data[INPUT] @ self.prototypes.T), axis=1)
         return {PREDICTION: y_hat, TARGET: data[TARGET]}
 
+    def log_params(self):
+        return {"model": "Heuristic"}
+
 
 class AlreadyExistingSolutionBaseline(ArtModule):
     name = "Already Existing Solution Baseline"
@@ -92,3 +98,6 @@ class AlreadyExistingSolutionBaseline(ArtModule):
     def predict(self, data: Dict):
         preds = self.model(data[INPUT]).logits.detach().numpy()
         return {PREDICTION: preds, TARGET: data[TARGET]}
+
+    def log_params(self):
+        return {"model": self.model.__class__.__name__}
