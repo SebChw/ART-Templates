@@ -52,3 +52,13 @@ class MNISTModel(ArtModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
+
+    def log_params(self):
+        return {
+            "lr": self.lr,
+            "normalize_img": self.normalize_img,
+            "loss_fn": self.loss_fn.__class__.__name__,
+            "n_parameters": sum(
+                p.numel() for p in self.parameters() if p.requires_grad
+            ),
+        }

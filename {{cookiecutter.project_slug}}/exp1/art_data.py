@@ -43,3 +43,9 @@ class MNISTDataModule(L.LightningDataModule):
 
     def turn_off_regularizations(self):
         pass
+
+    def log_params(self):
+        return {
+            "train_samples": len(self.dataset["train"]),
+            "val_samples": len(self.dataset["test"]),
+        }
