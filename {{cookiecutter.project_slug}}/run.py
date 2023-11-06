@@ -1,4 +1,4 @@
-from .models.base_model import Model
+from .models.models import MNISTModel as Model
 from .dataset import MyDataModule
 
 from art.experiment.Experiment import ArtProject
