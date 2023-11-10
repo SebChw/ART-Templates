@@ -102,3 +102,4 @@ instance/
 # TODO: Add more patterns based on your specific needs
 
 lightning_logs/*
+.neptune/*

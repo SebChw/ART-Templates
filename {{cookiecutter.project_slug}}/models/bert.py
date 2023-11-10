@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from art.core.base_components.base_model import ArtModule
+from art.core import ArtModule
 from art.utils.enums import (
     BATCH,
     INPUT,
@@ -18,14 +18,21 @@ class YelpReviewsModel(ArtModule):
         super().__init__()
         # Initialize the BERT model for sequence classification with 5 labels.
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            "bert-base-cased", num_labels=5
+            "prajjwal1/bert-tiny", num_labels=5
         )
+        # Define the loss function
         self.loss_fn = nn.CrossEntropyLoss()
+        # Define the learning rate
         self.lr = lr
-        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+        # Define the tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
 
     def parse_data(self, data):
+        # Parse the data so that it fits the model
+
+        # Get the batch
         batch = data[BATCH]
+        # Tokenize the text
         inputs = self.tokenizer(
             batch['text'],
             padding='max_length',
@@ -33,28 +40,27 @@ class YelpReviewsModel(ArtModule):
             max_length=512,
             return_tensors='pt'
         )
-
+        # Get the labels
         labels = batch['label'].clone().detach().float()
+        # Return the parsed data as a dictionary
         return {INPUT: inputs, TARGET: labels}
 
-    # def forward(self, inputs):
-    #     # Directly pass the tokenized inputs to the model
-    #     outputs = self.model(**inputs)
-    #     return outputs
-
     def predict(self, data):
-        # Assuming data[INPUT] is already tokenized inputs and data[TARGET] are the labels
+        # Make predictions
+
+        # Get the outputs from the model
         outputs = self.model(**data[INPUT])
-        predictions = outputs.logits.argmax(dim=-1)
+        # Get the predictions - the logits
+        predictions = outputs.logits
         predictions = self.unify_type(predictions).float()
-        data[TARGET] = self.unify_type(data[TARGET]).float()
+        data[TARGET] = self.unify_type(data[TARGET]).long()
+        # Return the predictions and the targets as a dictionary
         return {PREDICTION: predictions, TARGET: data[TARGET]}
 
     def compute_loss(self, data):
-        loss = data["CrossEntropyLoss"]  # user must know the classes names
-        # TODO fix this
-        # if experi
-        # self.log(TRAIN_LOSS, loss)
+        # Notice that the loss calculation is done in MetricsCalculator!
+        # We only need to specify which loss (metric) we want to use
+        loss = data["CrossEntropyLoss"]
         return {LOSS: loss}
 
     def configure_optimizers(self):
