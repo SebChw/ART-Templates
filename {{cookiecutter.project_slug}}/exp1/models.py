@@ -1,18 +1,11 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from einops.layers.torch import Reduce
+from einops.layers.torch import Rearrange
 
 from art.core.base_components.base_model import ArtModule
-from art.utils.enums import (
-    BATCH,
-    INPUT,
-    LOSS,
-    PREDICTION,
-    TARGET,
-    TRAIN_LOSS,
-    VALIDATION_LOSS,
-)
+from art.utils.enums import (BATCH, INPUT, LOSS, PREDICTION, TARGET,
+                             TRAIN_LOSS, VALIDATION_LOSS)
 
 
 class MNISTModel(ArtModule):
@@ -36,6 +29,7 @@ class MNISTModel(ArtModule):
         X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float()
         if self.normalize_img:
             X /= 255
+            X = (X - 0.1307) / 0.3081  # mean value of MNIST dataset
         return {INPUT: X, TARGET: data[BATCH][TARGET]}
 
     def predict(self, data):
@@ -62,3 +56,7 @@ class MNISTModel(ArtModule):
                 p.numel() for p in self.parameters() if p.requires_grad
             ),
         }
+
+class MNISTModelNormalized(MNISTModel):
+    def __init__(self, lr=0.001):
+        super().__init__(lr=lr, normalize_img=True)
