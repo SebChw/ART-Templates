@@ -2,6 +2,7 @@ from typing import Dict
 
 import numpy as np
 from einops import rearrange
+from sklearn.linear_model import LogisticRegression
 
 from art.core.base_components.base_model import ArtModule
 from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
@@ -10,7 +11,7 @@ from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
 class MlBaseline(ArtModule):
     name = "ML Baseline"
 
-    def __init__(self, model):
+    def __init__(self, model=LogisticRegression()):
         super().__init__()  # device="cpu")
         self.model = model
 
