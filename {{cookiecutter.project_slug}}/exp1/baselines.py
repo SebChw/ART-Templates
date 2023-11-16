@@ -4,7 +4,7 @@ import numpy as np
 from einops import rearrange
 from sklearn.linear_model import LogisticRegression
 
-from art.core.base_components.base_model import ArtModule
+from art.core import ArtModule
 from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
 
 

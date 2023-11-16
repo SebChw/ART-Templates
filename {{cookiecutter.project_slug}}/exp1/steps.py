@@ -1,11 +1,10 @@
-# %%
 from collections import Counter
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from art.step.step_savers import MatplotLibSaver
-from art.step.steps import ExploreData
+from art.steps import ExploreData
+from art.utils.savers import MatplotLibSaver
 
 
 class DataAnalysis(ExploreData):
