@@ -1,6 +1,6 @@
-from art.step.checks import Check, CheckResult, ResultOfCheck
-from art.step.step import Step
-from art.step.step_savers import MatplotLibSaver
+from art.checks import Check, CheckResult, ResultOfCheck
+from art.steps import Step
+from art.utils.savers import MatplotLibSaver
 
 
 class CheckClassImagesExist(Check):

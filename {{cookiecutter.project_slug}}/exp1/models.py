@@ -3,9 +3,16 @@ import torch.nn as nn
 from einops import rearrange
 from einops.layers.torch import Rearrange
 
-from art.core.base_components.base_model import ArtModule
-from art.utils.enums import (BATCH, INPUT, LOSS, PREDICTION, TARGET,
-                             TRAIN_LOSS, VALIDATION_LOSS)
+from art.core import ArtModule
+from art.utils.enums import (
+    BATCH,
+    INPUT,
+    LOSS,
+    PREDICTION,
+    TARGET,
+    TRAIN_LOSS,
+    VALIDATION_LOSS,
+)
 
 
 class MNISTModel(ArtModule):
@@ -56,6 +63,7 @@ class MNISTModel(ArtModule):
                 p.numel() for p in self.parameters() if p.requires_grad
             ),
         }
+
 
 class MNISTModelNormalized(MNISTModel):
     def __init__(self, lr=0.001):
