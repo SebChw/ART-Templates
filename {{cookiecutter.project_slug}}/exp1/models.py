@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from einops.layers.torch import Reduce
+from einops.layers.torch import Rearrange
 
-from art.core.base_components.base_model import ArtModule
+from art.core import ArtModule
 from art.utils.enums import (
     BATCH,
     INPUT,
@@ -25,8 +25,8 @@ class MNISTModel(ArtModule):
             nn.Conv2d(8, 32, 3, 1, "same"),
             nn.MaxPool2d(2, 2),
             nn.ReLU(),
-            Reduce("b c h w -> b c", "mean"),
-            nn.Linear(32, 10),
+            Rearrange("b c h w -> b (c h w)"),
+            nn.Linear(1568, 10),
         )  # model
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
@@ -36,6 +36,7 @@ class MNISTModel(ArtModule):
         X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float()
         if self.normalize_img:
             X /= 255
+            X = (X - 0.1307) / 0.3081  # mean value of MNIST dataset
         return {INPUT: X, TARGET: data[BATCH][TARGET]}
 
     def predict(self, data):
@@ -62,3 +63,8 @@ class MNISTModel(ArtModule):
                 p.numel() for p in self.parameters() if p.requires_grad
             ),
         }
+
+
+class MNISTModelNormalized(MNISTModel):
+    def __init__(self, lr=0.001):
+        super().__init__(lr=lr, normalize_img=True)
