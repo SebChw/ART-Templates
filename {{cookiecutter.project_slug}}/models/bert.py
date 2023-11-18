@@ -1,3 +1,4 @@
+from typing import Dict
 import torch
 from torch import nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -25,29 +26,22 @@ class YelpReviewsModel(ArtModule):
         # Define the learning rate
         self.lr = lr
         # Define the tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
 
     def parse_data(self, data):
         # Parse the data so that it fits the model
-
-        # Get the batch
         batch = data[BATCH]
-        # Tokenize the text
-        inputs = self.tokenizer(
-            batch['text'],
-            padding='max_length',
-            truncation=True,
-            max_length=512,
-            return_tensors='pt'
-        )
-        # Get the labels
-        labels = batch['label'].clone().detach().float()
+        inputs = {
+            'input_ids': batch['input_ids'],
+            'token_type_ids': batch['token_type_ids'],
+            'attention_mask': batch['attention_mask']
+        }
+        labels = batch['label']
         # Return the parsed data as a dictionary
         return {INPUT: inputs, TARGET: labels}
 
     def predict(self, data):
         # Make predictions
-
+        # data[INPUT] = {k: v.to(self.device) for k, v in data[INPUT].items()}
         # Get the outputs from the model
         outputs = self.model(**data[INPUT])
         # Get the predictions - the logits

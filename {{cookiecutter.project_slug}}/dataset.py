@@ -5,7 +5,7 @@ import lightning as pl
 
 
 class YelpReviews(pl.LightningDataModule):
-    def __init__(self, batch_size=32):
+    def __init__(self, batch_size=64):
         super().__init__()
         self.batch_size = batch_size
         self.dataset = load_dataset("yelp_review_full")
@@ -14,18 +14,15 @@ class YelpReviews(pl.LightningDataModule):
         self.prepare_data_start()
 
     def prepare_data_start(self):
-        self.train_dataset = self.dataset["train"].select(range(1000))
-        self.train_dataset = self.train_dataset.map(
-            self.tokenize_function, batched=True)
-        self.val_dataset = self.dataset["test"].select(range(1000))
-        self.val_dataset = self.val_dataset.map(
-            self.tokenize_function, batched=True)
+        # Define the tokenization process
+        def tokenize_function(examples):
+            return self.tokenizer(examples['text'], padding='max_length', truncation=True, max_length=512)
 
-    def setup(self, stage=None):
-        pass
-
-    def tokenize_function(self, examples):
-        return self.tokenizer(examples['text'], padding='longest', truncation=True)
+        # Tokenize the dataset
+        self.train_dataset = self.dataset["train"].select(
+            range(1000)).map(tokenize_function, batched=True)
+        self.val_dataset = self.dataset["test"].select(
+            range(1000)).map(tokenize_function, batched=True)
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size)
