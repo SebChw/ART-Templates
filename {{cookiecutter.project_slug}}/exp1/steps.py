@@ -50,7 +50,7 @@ class DataAnalysis(ExploreData):
                 axes[i].axis("off")
 
             MatplotLibSaver().save(
-                fig, self.get_step_id(), self.name, self.get_class_image_path(cls)
+                fig, self.get_full_step_name(), self.get_class_image_path(cls)
             )
 
         self.results.update(
