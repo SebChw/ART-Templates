@@ -1,3 +1,8 @@
+art_checkpoints
+lightning_logs
+.neptune
+debug_art.log
+*.png
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
