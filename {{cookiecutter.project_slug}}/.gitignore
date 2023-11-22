@@ -103,3 +103,4 @@ instance/
 
 lightning_logs/*
 .neptune/*
+art_checkpoints/*
