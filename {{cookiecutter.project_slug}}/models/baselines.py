@@ -12,7 +12,7 @@ class MlBaseline(ArtModule):
     name = "ML Baseline"
 
     def __init__(self, model=LogisticRegression()):
-        super().__init__()
+        super().__init__()  # device="cpu")
         self.model = model
 
     def ml_parse_data(self, data):
@@ -29,6 +29,7 @@ class MlBaseline(ArtModule):
         return {"model": self.model}
 
     def parse_data(self, data):
+        # TODO PARSE DATA IS ALMOST ALWAYS THE SAME
         """This is first step of your pipeline it always has batch keys inside"""
         batch = data[BATCH]
         return {
