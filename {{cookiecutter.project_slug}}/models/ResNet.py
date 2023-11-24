@@ -23,16 +23,15 @@ class ResNet18(ArtModule):
         self.lr = lr
         self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
         self.preprocess = transforms.Compose([
+            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761]),
             transforms.Resize(256),
             transforms.CenterCrop(224),
         ])
 
     def parse_data(self, data):
         """This is first step of your pipeline it always has batch keys inside"""
-        mean = np.asarray([0.5071, 0.4867, 0.4408], dtype=np.float32)
-        std = np.asarray([0.2675, 0.2565, 0.2761], dtype=np.float32)
         X = data[BATCH][INPUT]
-        X = (X / 255 - mean) / std
+        X = X / 255
         X = rearrange(X, "b h w c -> b c h w")
         X = self.preprocess(X)
 
@@ -41,7 +40,8 @@ class ResNet18(ArtModule):
 
     
     def predict(self, data: Dict):
-        preds = self.model(data[INPUT]).detach().numpy()
+        # preds = self.model(data[INPUT]).detach().numpy()
+        preds = self.model(data[INPUT]).detach()
         # perhaps softmax will be needed
         return {PREDICTION: preds, TARGET: data[TARGET]}
     
