@@ -46,7 +46,7 @@ class MlBaseline(ArtModule):
 class HeuristicBaseline(ArtModule):
     name = "Heuristic Baseline"
     n_classes = 100
-    img_shape = (28, 28)
+    img_shape = (32, 32, 3)
 
     def __init__(self):
         super().__init__()
@@ -61,7 +61,7 @@ class HeuristicBaseline(ArtModule):
 
     def baseline_train(self, data):
         self.prototypes = np.zeros(
-            (self.n_classes, self.img_shape[0] * self.img_shape[1])
+            (self.n_classes, self.img_shape[0] * self.img_shape[1] * self.img_shape[2])
         )
         self.counts = np.zeros(self.n_classes)
         for batch in data["dataloader"]:
@@ -79,24 +79,24 @@ class HeuristicBaseline(ArtModule):
         return {"model": "Heuristic"}
 
 
-class AlreadyExistingSolutionBaseline(ArtModule):
-    name = "Already Existing Solution Baseline"
-
+class AlreadyExistingResNet20Baseline(ArtModule):
+    name = "Already Existing ResNet20 Baseline"
+    
     def __init__(self):
-        from transformers import ResNetForImageClassification
-
         super().__init__()
-        self.model = ResNetForImageClassification.from_pretrained(
-            "sebchw/MNIST_Existing_Baseline"
-        )
+        import torch
+        self.model = torch.hub.load("chenyaofo/pytorch-cifar-models", "cifar100_resnet20", pretrained=True)
 
     def parse_data(self, data):
-        X = rearrange(data[BATCH][INPUT], "b h w -> b 1 h w").float()
-        X = (X / 255 - 0.45) / 0.22
+        mean = np.asarray([0.5071, 0.4867, 0.4408], dtype=np.float32)
+        std = np.asarray([0.2675, 0.2565, 0.2761], dtype=np.float32)
+        X = data[BATCH][INPUT]
+        X = (X / 255 - mean) / std
+        X = rearrange(X, "b h w c -> b c h w")
         return {INPUT: X, TARGET: data[BATCH][TARGET]}
 
     def predict(self, data: Dict):
-        preds = self.model(data[INPUT]).logits.detach().numpy()
+        preds = self.model(data[INPUT]).detach().numpy()
         return {PREDICTION: preds, TARGET: data[TARGET]}
 
     def log_params(self):

@@ -31,7 +31,7 @@ class DataAnalysis(ExploreData):
         img_dimensions = self.datamodule.train_dataloader().dataset[0][INPUT].shape
 
         # Loop through classes and visualize 5 examples for 5 randomly selected classes (out of 100)
-        for cls in sample(class_names, 5):
+        for cls in class_names:
             class_indices = [i for i, label in enumerate(targets) if label == cls]
             class_samples = np.random.choice(class_indices, 5, replace=False).tolist()
 
