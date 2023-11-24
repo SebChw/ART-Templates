@@ -27,6 +27,8 @@ class ResNet18(ArtModule):
             transforms.Resize(256),
             transforms.CenterCrop(224),
         ])
+        # for name, para in self.model.named_parameters():
+        #     para.requires_grad = True
 
     def parse_data(self, data):
         """This is first step of your pipeline it always has batch keys inside"""
@@ -34,16 +36,13 @@ class ResNet18(ArtModule):
         X = X / 255
         X = rearrange(X, "b h w c -> b c h w")
         X = self.preprocess(X)
-
-        return {INPUT: X, TARGET: data[BATCH][TARGET]}
+        target = data[BATCH][TARGET].long()
+        return {INPUT: X, TARGET: target}
     
 
     
-    def predict(self, data: Dict):
-        # preds = self.model(data[INPUT]).detach().numpy()
-        preds = self.model(data[INPUT]).detach()
-        # perhaps softmax will be needed
-        return {PREDICTION: preds, TARGET: data[TARGET]}
+    def predict(self, data: Dict):       
+        return {PREDICTION: self.model(data[INPUT]), TARGET: data[TARGET]}
     
     def compute_loss(self, data):
         # Notice that the loss calculation is done in MetricsCalculator!
