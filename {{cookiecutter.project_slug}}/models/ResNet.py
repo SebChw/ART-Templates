@@ -23,7 +23,7 @@ class ResNet18(ArtModule):
         self.lr = lr
         self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
         self.preprocess = transforms.Compose([
-            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761]),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.Resize(256),
             transforms.CenterCrop(224),
         ])

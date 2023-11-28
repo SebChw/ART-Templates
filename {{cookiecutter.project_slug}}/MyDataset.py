@@ -8,7 +8,9 @@ class CifarDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.dataset = load_dataset("cifar100").with_format("torch")
         self.dataset = self.dataset.rename_columns({"img": "input", "fine_label": "target"})
+        # self.dataset = self.dataset.rename_columns({"img": "input", "coarse_label": "target"})
         self.dataset = self.dataset.remove_columns(["coarse_label"])
+        # self.dataset = self.dataset.remove_columns(["fine_label"])
 
     def setup(self, stage: str):
         self.train = self.dataset["train"]
