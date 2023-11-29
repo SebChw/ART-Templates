@@ -104,3 +104,6 @@ instance/
 *.png
 art_checkpoints/
 lightning_logs/
+
+.neptune/
+*.zip
