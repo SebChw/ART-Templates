@@ -1,12 +1,12 @@
-from .models.base_model import Model
-from .dataset import MyDataModule
+from art.project import ArtProject
 
-from art.experiment.Experiment import ArtProject
+from .dataset import MyDataModule
+from .models.base_model import Model
 
 
 def main():
     data_module = MyDataModule()
-    model = Model()
+    model = Model
     project = ArtProject("{{cookiecutter.project_slug}}", data_module)
     project.add_step(...)
     project.run_all()

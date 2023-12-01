@@ -1,4 +1,4 @@
-from art.core.base_components import ArtModule
+from art.core import ArtModule
 
 
 class Model(ArtModule):
