@@ -1,3 +1,4 @@
+import argparse
 from collections import namedtuple
 
 import torch.nn as nn
@@ -19,7 +20,7 @@ from art.steps import Regularize
 from art.utils.enums import TrainingStage
 
 
-def main():
+def main(max_epochs=10):
     seed_everything(23)
     # Datamodule on which we try to achieve good performance
     data_module = FruitsDataModule()
@@ -42,7 +43,7 @@ def main():
     WANTED_SCORE = 0.75
     acc_check = CheckScoreGreaterThan(accuracy, WANTED_SCORE)
 
-    TRAINER_KWARGS = {"callbacks": [checkpoint], "max_epochs": 10}
+    TRAINER_KWARGS = {"callbacks": [checkpoint], "max_epochs": max_epochs}
 
     # define configs format
     RegConfig = namedtuple(
@@ -80,4 +81,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max_epochs", type=int, default=10)
+    args = parser.parse_args()
+    main(args.max_epochs)
