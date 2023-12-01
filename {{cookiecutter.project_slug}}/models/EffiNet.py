@@ -1,6 +1,7 @@
 from typing import Dict
 from art.core import ArtModule
 import torch
+import timm
 import torch.nn as nn
 from torchvision import transforms
 import numpy as np
@@ -15,17 +16,15 @@ from art.utils.enums import (
     VALIDATION_LOSS,
 )
 
-class ResNet(ArtModule):
+class EffiNet(ArtModule):
     def __init__(self, num_classes=100, lr=1e-3):
         super().__init__()
-        self.model = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', 'resnet18_swsl')
+        self.model = timm.create_model('efficientnet_b2.ra_in1k', pretrained=True, num_classes=100)
         self.loss = torch.nn.CrossEntropyLoss()
         self.lr = lr
-        self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
         self.preprocess = transforms.Compose([
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.Resize(256),
-            transforms.CenterCrop(224),
         ])
 
     def parse_data(self, data):

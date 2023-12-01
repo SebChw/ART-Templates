@@ -20,16 +20,11 @@ class DataAnalysis(ExploreData):
         # Now tell me what are the names of these classes
         class_names = list(self.datamodule.dataset["train"].features[TARGET].names)
 
-        class_counts = Counter(targets)
-
         # Now calculate number of images in each class
-        number_of_examples_in_each_class = [
-            class_counts[i] for i in range(number_of_classes)
-        ]
+        class_counts = Counter(targets)
 
         # Now tell me dimensions of each image
         img_dimensions = self.datamodule.train_dataloader().dataset[0][INPUT].shape
-        figures = []
         for cls in class_names:
             class_indices = [i for i, label in enumerate(targets) if label == cls]
             class_samples = np.random.choice(class_indices, 5, replace=False).tolist()
@@ -47,15 +42,13 @@ class DataAnalysis(ExploreData):
             MatplotLibSaver().save(
                 fig, self.get_full_step_name(), self.get_class_image_path(cls)
             )
-            figures.append(fig)
 
         self.results.update(
             {
                 "number_of_classes": number_of_classes,
                 "class_names": class_names,
-                "number_of_examples_in_each_class": number_of_examples_in_each_class,
+                "number_of_examples_in_each_class": class_counts,
                 "img_dimensions": img_dimensions,
-                "images": figures,
             }
         )
     def log_params(self):
