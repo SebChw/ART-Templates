@@ -100,3 +100,9 @@ instance/
 *.bak
 *.tmp
 # TODO: Add more patterns based on your specific needs
+
+*.png
+lightning_logs/
+
+.neptune/
+*.zip
