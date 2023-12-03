@@ -1,6 +1,5 @@
 import random
 from collections import defaultdict
-from typing import List
 
 import pandas as pd
 import torch
@@ -8,7 +7,7 @@ from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from embedding_transfer_learning.common import FINAL_DATA_PARQUET
+from common import FINAL_DATA_PARQUET_TRAIN, FINAL_DATA_PARQUET_VALID, FINAL_DATA_PARQUET_TEST
 
 
 class EmbeddingDataset(Dataset):
@@ -51,22 +50,17 @@ class EmbeddingDataset(Dataset):
 
 
 class EmbeddingDataModule(LightningDataModule):
-    def __init__(self, df: pd.DataFrame, batch_size=32, num_workers=6):
+    def __init__(self, batch_size=10, num_workers=6):
         super().__init__()
-        self.df = df
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-    def setup(self, stage):
-        recipe_ids = self.df["recipe_id"].unique().tolist()
-        random.shuffle(recipe_ids)
-        train_size = int(len(recipe_ids) * 0.7)
-        val_size = int(len(recipe_ids) * 0.2)
-        self.train_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[:train_size])])
+    def setup(self, stage=None):
+        self.train_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_TRAIN))
         self.train_subset.setup()
-        self.val_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[train_size:train_size+val_size])])
+        self.val_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_VALID))
         self.val_subset.setup()
-        self.test_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[train_size+val_size:])])
+        self.test_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_TEST))
         self.test_subset.setup()
 
     def train_dataloader(self):
@@ -85,6 +79,4 @@ class EmbeddingDataModule(LightningDataModule):
             "val_samples": len(self.val_subset),
             "test_samples": len(self.test_subset),
         }
-
-
 

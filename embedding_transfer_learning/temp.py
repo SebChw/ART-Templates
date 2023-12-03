@@ -3,17 +3,15 @@ from lightning import Trainer
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 
-from embedding_transfer_learning.common import FINAL_DATA_PARQUET
-from embedding_transfer_learning.dataset import EmbeddingDataset, EmbeddingDataModule
-from embedding_transfer_learning.models.base_model import EmbeddingModel
+from dataset import EmbeddingDataset, EmbeddingDataModule
+from models.base_model import EmbeddingModel
 
 
 batch_size = 256
 lr = 1e-4
 
 if __name__ == "__main__":
-    df = pd.read_parquet(FINAL_DATA_PARQUET)
-    datamodule = EmbeddingDataModule(df, batch_size=batch_size, num_workers=6)
+    datamodule = EmbeddingDataModule(batch_size=batch_size, num_workers=6)
 
     model = EmbeddingModel(512, batch_size=batch_size, lr=lr)
     #wandb logger
