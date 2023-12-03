@@ -1,6 +1,6 @@
 from art.checks import CheckResultExists, CheckScoreExists, CheckScoreCloseTo, CheckScoreLessThan, CheckScoreGreaterThan
 from art.steps import EvaluateBaseline, CheckLossOnInit, OverfitOneBatch, Overfit, Regularize
-from art.loggers import WandbLoggerAdapter
+from art.loggers import TensorBoardLoggerAdapter
 from losses import ApproximateMRR
 from metrics import HitAtKMetric, MRRMetric
 from steps import DataPreparation, TextDataAnalysis
@@ -10,11 +10,13 @@ from dataset import EmbeddingDataModule
 from art.project import ArtProject
 
 
+def getLogger(run_name: str):
+    return TensorBoardLoggerAdapter(name=run_name)
+
 def main():
     project_name = "embedding_transfer_learning"
     data_module = EmbeddingDataModule(batch_size=256)
     project = ArtProject(project_name, data_module)
-    logger = WandbLoggerAdapter()
     project.add_step(DataPreparation(),[])
     project.add_step(TextDataAnalysis(),[
         CheckResultExists("embedding_size"),
@@ -44,15 +46,15 @@ def main():
                            value=EXPECTED_LOSS, abs_tol=0.1)]
     )
     project.add_step(
-        step=OverfitOneBatch(model, model_kwargs=dict(lr=3e-4), number_of_steps=200, logger=logger),
+        step=OverfitOneBatch(model, model_kwargs=dict(lr=3e-4), number_of_steps=200, logger=getLogger("Overfit One Batch")),
         checks=[CheckScoreLessThan(metric=METRICS[4], value=1-0.80)]
     )
     project.add_step(
-        step=Overfit(model, max_epochs=100, logger=logger, model_kwargs=dict(lr=3e-4), trainer_kwargs={"check_val_every_n_epoch": 1}),
+        step=Overfit(model, max_epochs=100, logger=getLogger("Overfit"), model_kwargs=dict(lr=3e-4), trainer_kwargs={"check_val_every_n_epoch": 1}),
         checks=[CheckScoreLessThan(metric=METRICS[4], value=1-0.79)],
     )
     project.add_step(
-        Regularize(model, trainer_kwargs=dict(max_epochs=10), model_kwargs=dict(lr=1e-4), logger=logger),
+        Regularize(model, trainer_kwargs=dict(max_epochs=10), model_kwargs=dict(lr=1e-4), logger=getLogger("Regularize")),
         checks=[CheckScoreGreaterThan(metric=METRICS[3], value=0.70)]
     )
     project.run_all()
