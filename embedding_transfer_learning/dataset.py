@@ -12,19 +12,20 @@ from embedding_transfer_learning.common import FINAL_DATA_PARQUET
 
 
 class EmbeddingDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, queries_per_recipe=3):
+    def __init__(self, df: pd.DataFrame):
         super().__init__()
         self.df = df
         self.df_recipe = df.drop(columns=["query_id", "query_embeddings"]).drop_duplicates(subset=["recipe_id"]).reset_index(drop=True)
         self.n_queries = len(df)
         #groupby query_id and calc len
         self.n_recipies = len(self.df_recipe)
-        self.queries_per_recipe = queries_per_recipe
 
     def setup(self):
         self.recipe_to_query = defaultdict(list)
-        self.recipe_id_to_index = {self.df_recipe['recipe_id'][i]:i for i in range(self.n_recipies)}
-        self.query_id_to_index = {self.df['query_id'][i]:i for i in range(self.n_queries)}
+        recipe_id_list = self.df_recipe['recipe_id'].tolist()
+        self.recipe_id_to_index = {recipe_id_list[i]:i for i in range(self.n_recipies)}
+        query_id_list = self.df['query_id'].tolist()
+        self.query_id_to_index = {query_id_list[i]:i for i in range(self.n_queries)}
         grouped = self.df.groupby('recipe_id')['query_id'].apply(list)
         for recipe_id, query_ids in tqdm(grouped.items(), total=len(grouped)):
             recipe_index = self.recipe_id_to_index[recipe_id]
@@ -39,13 +40,13 @@ class EmbeddingDataset(Dataset):
         return self.n_recipies
 
     def __getitem__(self, idx):
-        query_ids = random.sample(self.recipe_to_query[idx], self.queries_per_recipe)
+        query_id = random.choice(self.recipe_to_query[idx])
 
         return {
             "recipe_texts": self.recipe_texts[idx],
             "recipe_embeddings": self.recipe_embeddings[idx],
-            "query_texts": [self.query_texts[query_id] for query_id in query_ids],
-            "query_embeddings": self.query_embeddings[query_ids]
+            "query_texts": self.query_texts[query_id],
+            "query_embeddings": self.query_embeddings[query_id],
         }
 
 
@@ -57,11 +58,16 @@ class EmbeddingDataModule(LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage):
-        self.dataset = EmbeddingDataset(self.df)
-        self.dataset.setup()
-        self.train_subset = self.dataset
-        self.val_subset = self.dataset
-        self.test_subset = self.dataset
+        recipe_ids = self.df["recipe_id"].unique().tolist()
+        random.shuffle(recipe_ids)
+        train_size = int(len(recipe_ids) * 0.7)
+        val_size = int(len(recipe_ids) * 0.2)
+        self.train_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[:train_size])])
+        self.train_subset.setup()
+        self.val_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[train_size:train_size+val_size])])
+        self.val_subset.setup()
+        self.test_subset = EmbeddingDataset(self.df[self.df["recipe_id"].isin(recipe_ids[train_size+val_size:])])
+        self.test_subset.setup()
 
     def train_dataloader(self):
         return DataLoader(self.train_subset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
@@ -72,15 +78,13 @@ class EmbeddingDataModule(LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.test_subset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
 
+    def log_params(self):
+        return {
+            "batch_size": self.batch_size,
+            "train_samples": len(self.train_subset),
+            "val_samples": len(self.val_subset),
+            "test_samples": len(self.test_subset),
+        }
 
-if __name__ == "__main__":
-    print("reading")
-    df = pd.read_parquet(FINAL_DATA_PARQUET)
-    print(df.columns)
-    print("creating dataset")
-    dataset = EmbeddingDataset(df)
-    print("setting up dataset")
-    dataset.setup()
-    for i in tqdm(range(len(dataset))):
-        dataset[i]
+
 

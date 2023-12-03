@@ -8,14 +8,14 @@ from embedding_transfer_learning.dataset import EmbeddingDataset, EmbeddingDataM
 from embedding_transfer_learning.models.base_model import EmbeddingModel
 
 
-batch_size = 16
-lr = 1e-5
+batch_size = 256
+lr = 1e-4
 
 if __name__ == "__main__":
     df = pd.read_parquet(FINAL_DATA_PARQUET)
     datamodule = EmbeddingDataModule(df, batch_size=batch_size, num_workers=6)
 
-    model = EmbeddingModel(512)
+    model = EmbeddingModel(512, batch_size=batch_size, lr=lr)
     #wandb logger
     wandb_logger = WandbLogger(
         project="contrast", reinit=True, log_model="all", name="embedding_model"
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         devices=1,
         max_epochs=50,
         enable_progress_bar=True,
-        log_every_n_steps=1,
+        log_every_n_steps=10,
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         num_sanity_val_steps=0,
@@ -38,3 +38,4 @@ if __name__ == "__main__":
     )
 
     trainer.fit(model, datamodule=datamodule)
+    # trainer.test(model, datamodule=datamodule)
