@@ -89,7 +89,6 @@ instance/
 .webassets-cache
 
 # Other
-*.png
 *.pot
 *.pyc
 *.pyo
