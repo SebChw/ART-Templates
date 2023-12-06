@@ -3,14 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from art.utils.savers import MatplotLibSaver
 from art.steps import ExploreData
-from random import sample
-from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
+from art.utils.enums import INPUT, TARGET
+
 
 class DataAnalysis(ExploreData):
     def do(self, previous_states):
         targets = []
-        index2label = lambda x: self.datamodule.dataset["train"].features[TARGET].int2str(x)
-        label2index = lambda x: self.datamodule.dataset["train"].features[TARGET].str2int(x)
+        index2label = (
+            lambda x: self.datamodule.dataset["train"].features[TARGET].int2str(x)
+        )
         # Loop through batches in the cifar_datamodule train dataloader
         for batch in self.datamodule.train_dataloader():
             targets.extend(batch[TARGET])
@@ -31,10 +32,7 @@ class DataAnalysis(ExploreData):
 
             fig, axes = plt.subplots(1, 5, figsize=(15, 5))
             for i, sample_idx in enumerate(class_samples):
-                img = (
-                    self.datamodule.train_dataloader()
-                    .dataset[sample_idx][INPUT]
-                )
+                img = self.datamodule.train_dataloader().dataset[sample_idx][INPUT]
                 axes[i].imshow(img, cmap="gray")
                 axes[i].set_title(f"Class: {cls}")
                 axes[i].axis("off")
@@ -51,8 +49,9 @@ class DataAnalysis(ExploreData):
                 "img_dimensions": img_dimensions,
             }
         )
+
     def log_params(self):
         return {}
-    
+
     def get_class_image_path(self, class_name: str):
         return f"class_images/class_{class_name}.png"

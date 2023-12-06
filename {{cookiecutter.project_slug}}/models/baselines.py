@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 import numpy as np
 from einops import rearrange
@@ -11,11 +11,11 @@ from art.utils.enums import BATCH, INPUT, PREDICTION, TARGET
 class MlBaseline(ArtModule):
     name = "ML Baseline"
 
-    def __init__(self, model=LogisticRegression()):
+    def __init__(self, model: Any = LogisticRegression()):
         super().__init__()
         self.model = model
 
-    def ml_parse_data(self, data):
+    def ml_parse_data(self, data: Dict):
         X = []
         y = []
         for batch in data["dataloader"]:
@@ -24,11 +24,11 @@ class MlBaseline(ArtModule):
 
         return {INPUT: np.concatenate(X), TARGET: np.concatenate(y)}
 
-    def baseline_train(self, data):
+    def baseline_train(self, data: Dict):
         self.model = self.model.fit(data[INPUT], data[TARGET])
         return {"model": self.model}
 
-    def parse_data(self, data):
+    def parse_data(self, data: Dict):
         """This is first step of your pipeline it always has batch keys inside"""
         batch = data[BATCH]
         return {
@@ -36,7 +36,7 @@ class MlBaseline(ArtModule):
             TARGET: batch[TARGET].numpy(),
         }
 
-    def predict(self, data):
+    def predict(self, data: Dict):
         return {PREDICTION: self.model.predict(data[INPUT]), TARGET: data[TARGET]}
 
     def log_params(self):
@@ -51,7 +51,7 @@ class HeuristicBaseline(ArtModule):
     def __init__(self):
         super().__init__()
 
-    def parse_data(self, data):
+    def parse_data(self, data: Dict):
         """This is first step of your pipeline it always has batch keys inside"""
         batch = data[BATCH]
         return {
@@ -59,7 +59,7 @@ class HeuristicBaseline(ArtModule):
             TARGET: batch[TARGET].numpy(),
         }
 
-    def baseline_train(self, data):
+    def baseline_train(self, data: Dict):
         self.prototypes = np.zeros(
             (self.n_classes, self.img_shape[0] * self.img_shape[1] * self.img_shape[2])
         )
@@ -71,7 +71,7 @@ class HeuristicBaseline(ArtModule):
 
         self.prototypes = self.prototypes / self.counts[:, None]
 
-    def predict(self, data):
+    def predict(self, data: Dict):
         y_hat = np.argmax((data[INPUT] @ self.prototypes.T), axis=1)
         return {PREDICTION: y_hat, TARGET: data[TARGET]}
 
@@ -81,13 +81,16 @@ class HeuristicBaseline(ArtModule):
 
 class AlreadyExistingResNet20Baseline(ArtModule):
     name = "Already Existing ResNet20 Baseline"
-    
+
     def __init__(self):
         super().__init__()
         import torch
-        self.model = torch.hub.load("chenyaofo/pytorch-cifar-models", "cifar100_resnet20", pretrained=True)
 
-    def parse_data(self, data):
+        self.model = torch.hub.load(
+            "chenyaofo/pytorch-cifar-models", "cifar100_resnet20", pretrained=True
+        )
+
+    def parse_data(self, data: Dict):
         mean = np.asarray([0.5071, 0.4867, 0.4408], dtype=np.float32)
         std = np.asarray([0.2675, 0.2565, 0.2761], dtype=np.float32)
         X = data[BATCH][INPUT]
