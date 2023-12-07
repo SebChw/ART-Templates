@@ -100,3 +100,5 @@ instance/
 *.bak
 *.tmp
 # TODO: Add more patterns based on your specific needs
+
+data

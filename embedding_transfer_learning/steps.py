@@ -28,26 +28,32 @@ class DataPreparation(Step):
         Args:
             previous_states (Dict): previous states
         """
-        art_logger.info("Reading data")
+        if QUERIES_PATH.exists() and RECIPIES_PATH.exists():
+            art_logger.info("Both queries and recipes exist, skipping")
+            return
+
+        art_logger.info("Reading data and model")
         df = self.read_data()
-        art_logger.info("Preparing recipe content")
-        df["recipe_merged_info"] = df.apply(make_recipe_string, axis=1)
         model = self.get_model()
-        art_logger.info("Preparing recipe embeddings")
-        recipe_df = self.calculate_recipe_embeddings(df, model)
-        art_logger.info("Preparing queries")
-        query_df = self.extract_queries(df)
-        art_logger.info("Merging datframes")
-        merged_df = pd.merge(query_df, recipe_df, left_on="recipe_id", right_on="id")
-        art_logger.info(merged_df.columns)
-        art_logger.info("Preparing final data")
-        final_df = self.calculate_query_embeddings(merged_df, model)
-        art_logger.info("Train test split")
-        train_df, valid_df, test_df = self.train_test_split(final_df)
-        art_logger.info("Saving final data")
-        train_df.to_parquet(FINAL_DATA_PARQUET_TRAIN)
-        valid_df.to_parquet(FINAL_DATA_PARQUET_VALID)
-        test_df.to_parquet(FINAL_DATA_PARQUET_TEST)
+
+        if QUERIES_PATH.exists():
+            art_logger.info("Queries exist, skipping")
+        else:
+            art_logger.info("Preparing queries")
+            query_df = self.extract_queries(df)
+            query_df = self.calculate_query_embeddings(query_df, model)
+            art_logger.info(f"Saving queries with columns: {query_df.columns}")
+            query_df.to_parquet(QUERIES_PATH)
+
+        if RECIPIES_PATH.exists():
+            art_logger.info("Recipes exist, skipping")
+        else:
+            art_logger.info("Preparing recipe content")
+            df["recipe_merged_info"] = df.apply(make_recipe_string, axis=1)
+            art_logger.info("Preparing recipe embeddings")
+            recipe_df = self.calculate_recipe_embeddings(df, model)
+            art_logger.info(f"Saving recipes with columns {recipe_df.columns}")
+            recipe_df.to_parquet(RECIPIES_PATH)
 
     def calculate_recipe_embeddings(self, df, model, batch_size=2):
         all_data = []
@@ -97,7 +103,6 @@ class DataPreparation(Step):
         df = df.reset_index(drop=True)
         df = df[["id", "query"]]
         df.rename(columns={"id": "recipe_id"}, inplace=True)
-        df["query_id"] = df.index
         return df
 
     def get_model(self):
