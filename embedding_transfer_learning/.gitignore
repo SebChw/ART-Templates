@@ -102,3 +102,5 @@ instance/
 # TODO: Add more patterns based on your specific needs
 
 data
+art_checkpoints
+lightning_logs

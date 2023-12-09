@@ -1,3 +1,5 @@
+import argparse
+
 from dataset import EmbeddingDataModule
 from losses import ApproximateMRR
 from metrics import HitAtKMetric, MRRMetric
@@ -27,19 +29,24 @@ def getLogger(run_name: str):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_workers", type=int, default=6)
+
+    args = parser.parse_args()
+
     project_name = "embedding_transfer_learning"
-    data_module = EmbeddingDataModule(batch_size=256, num_workers=0)
+    data_module = EmbeddingDataModule(batch_size=256, num_workers=args.n_workers)
     project = ArtProject(project_name, data_module)
     project.add_step(DataPreparation(), [])
-    # project.add_step(
-    #     TextDataAnalysis(),
-    #     [
-    #         CheckResultExists("embedding_size"),
-    #         CheckResultExists("number_of_reviews"),
-    #         CheckResultExists("average_review_length"),
-    #         CheckResultExists("average_query_length"),
-    #     ],
-    # )
+    project.add_step(
+        TextDataAnalysis(),
+        [
+            CheckResultExists("embedding_size"),
+            CheckResultExists("number_of_reviews"),
+            CheckResultExists("average_review_length"),
+            CheckResultExists("average_query_length"),
+        ],
+    )
     METRICS = [
         HitAtKMetric(top_k=1),
         HitAtKMetric(top_k=3),

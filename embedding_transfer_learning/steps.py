@@ -124,12 +124,13 @@ class DataPreparation(Step):
 
 class TextDataAnalysis(ExploreData):
     def do(self, previous_states):
-        reviews = []
+        reviews = set()
         queries = []
         self.datamodule.setup()
-        train_dataloader = self.datamodule.train_dataloader()
+        train_dataloader = self.datamodule.train_dataloader(return_text=True)
         for batch in train_dataloader:
-            reviews.extend(batch["recipe_texts"])
+            for recipe in batch["recipe_texts"]:
+                reviews.add(recipe)
             queries.extend(batch["query_texts"])
         self.embedding_size = train_dataloader.dataset[0]["recipe_embeddings"].shape[0]
         self.number_of_reviews = len(reviews)
