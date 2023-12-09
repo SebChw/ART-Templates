@@ -15,6 +15,12 @@ class Split(Enum):
     test = "test"
 
 
+class TrainType(Enum):
+    text = "text"
+    graph = "graph"
+    test = "both"
+
+
 from common import GRAPH_EMB_PATH, QUERIES_PATH, RECIPIES_PATH, SPLIT_PATH
 
 
@@ -26,10 +32,12 @@ class EmbeddingDataset(Dataset):
         queries: pd.DataFrame,
         recipes: pd.DataFrame,
         graph_embeddings: pd.DataFrame,
-        use_recipe_text: bool = True,
+        use_text_embeddings: bool = True,
         use_graph_embeddings: bool = True,
     ):
         super().__init__()
+        self.use_text_embeddings = use_text_embeddings
+        self.use_graph_embeddings = use_graph_embeddings
         with open(SPLIT_PATH) as f:
             splits_with_id = json.load(f)
             self.recipes_id_in_dataset = splits_with_id[split.value]
@@ -52,6 +60,11 @@ class EmbeddingDataset(Dataset):
         self.batch_size = batch_size
 
         self.return_text = False
+
+        self.overfit_one_batch = False
+        self.data_to_overfit = [
+            (recipe_num, 0) for recipe_num in range(self.batch_size)
+        ]
         # we govern shuffling by ourselfes
         self.reset_dataset()
 
@@ -71,13 +84,14 @@ class EmbeddingDataset(Dataset):
         available_queries = self.queries[recipe_id]
         n_queries = len(available_queries)
         selected_query = random.choice(
-            list(set(range(n_queries)) - self.aready_used[recipe_id])
+            list(set(range(n_queries)) - self.already_used_queries[recipe_id])
         )
+
         selected_query = self.queries[recipe_id].iloc[selected_query]
 
         # update dataset state
         self.processed_in_batch += 1
-        if self.processed_in_batch == self.n_queries:
+        if self.processed_in_batch == self.n_queries and not self.overfit_one_batch:
             self.reset_dataset()
 
         if self.return_text:
@@ -93,11 +107,11 @@ class EmbeddingDataset(Dataset):
         }
 
     def build_recipe_embedding(self, recipe_id):
-        if len(self.recipes) > 0 and len(self.graph_embeddings) > 0:
+        if self.use_graph_embeddings and self.use_text_embeddings:
             text_emb = self.recipes.loc[recipe_id].recipe_embeddings
             graph_emb = self.graph_embeddings.loc[recipe_id].embedding
             return torch.cat([torch.Tensor(text_emb), torch.Tensor(graph_emb)])
-        elif len(self.recipes) > 0:
+        elif self.use_text_embeddings:
             return torch.Tensor(self.recipes.loc[recipe_id].recipe_embeddings)
 
         return torch.Tensor(self.graph_embeddings.loc[recipe_id].embedding)
@@ -105,12 +119,13 @@ class EmbeddingDataset(Dataset):
     def reset_dataset(self):
         self.processed_in_batch = 0
         random.shuffle(self.recipes_id_in_dataset)
-        self.aready_used = defaultdict(set)
+        self.already_used_queries = defaultdict(set)
 
 
 class EmbeddingDataModule(LightningDataModule):
-    def __init__(self, batch_size=10, num_workers=6):
+    def __init__(self, train_type: TrainType, batch_size=10, num_workers=6):
         super().__init__()
+        self.train_type = train_type
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.is_setup = False
@@ -120,13 +135,23 @@ class EmbeddingDataModule(LightningDataModule):
             queries = pd.read_parquet(QUERIES_PATH)
             recipes = pd.read_parquet(RECIPIES_PATH).set_index("id")
             graph_embeddings = pd.read_parquet(GRAPH_EMB_PATH).set_index("recipe_id")
+
+            use_text_embeddings, use_graph_embeddings = False, False
+            if self.train_type == TrainType.text:
+                use_text_embeddings = True
+            elif self.train_type == TrainType.graph:
+                use_graph_embeddings = True
+            else:
+                use_text_embeddings, use_graph_embeddings = True, True
+
             self.train_subset = EmbeddingDataset(
                 Split.train,
                 self.batch_size,
                 queries,
                 recipes,
                 graph_embeddings,
-                use_graph_embeddings=False,
+                use_text_embeddings,
+                use_graph_embeddings,
             )
             self.val_subset = EmbeddingDataset(
                 Split.valid,
@@ -134,7 +159,8 @@ class EmbeddingDataModule(LightningDataModule):
                 queries,
                 recipes,
                 graph_embeddings,
-                use_graph_embeddings=False,
+                use_text_embeddings,
+                use_graph_embeddings,
             )
             self.test_subset = EmbeddingDataset(
                 Split.test,
@@ -142,7 +168,8 @@ class EmbeddingDataModule(LightningDataModule):
                 queries,
                 recipes,
                 graph_embeddings,
-                use_graph_embeddings=False,
+                use_text_embeddings,
+                use_graph_embeddings,
             )
 
             self.is_setup = True

@@ -1,10 +1,10 @@
 import argparse
 
-from dataset import EmbeddingDataModule
+from dataset import EmbeddingDataModule, TrainType
 from losses import ApproximateMRR
 from metrics import HitAtKMetric, MRRMetric
 from models.base_model import EmbeddingBaseline, EmbeddingHead
-from steps import DataPreparation, TextDataAnalysis
+from steps import CustomOverfitOneBatch, DataPreparation, TextDataAnalysis
 
 from art.checks import (
     CheckResultExists,
@@ -15,13 +15,7 @@ from art.checks import (
 )
 from art.loggers import TensorBoardLoggerAdapter
 from art.project import ArtProject
-from art.steps import (
-    CheckLossOnInit,
-    EvaluateBaseline,
-    Overfit,
-    OverfitOneBatch,
-    Regularize,
-)
+from art.steps import CheckLossOnInit, EvaluateBaseline, Overfit, Regularize
 
 
 def getLogger(run_name: str):
@@ -30,12 +24,16 @@ def getLogger(run_name: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_workers", type=int, default=6)
+    parser.add_argument("--n_workers", type=int, default=0)
 
     args = parser.parse_args()
 
+    train_type = TrainType.graph
+
     project_name = "embedding_transfer_learning"
-    data_module = EmbeddingDataModule(batch_size=256, num_workers=args.n_workers)
+    data_module = EmbeddingDataModule(
+        batch_size=256, num_workers=args.n_workers, train_type=train_type
+    )
     project = ArtProject(project_name, data_module)
     project.add_step(DataPreparation(), [])
     project.add_step(
@@ -67,20 +65,20 @@ def main():
         [CheckScoreCloseTo(metric=METRICS[4], value=EXPECTED_LOSS, abs_tol=0.1)],
     )
     project.add_step(
-        step=OverfitOneBatch(
+        step=CustomOverfitOneBatch(
             model,
-            model_kwargs=dict(lr=3e-4),
+            model_kwargs=dict(lr=3e-4, train_type=train_type),
             number_of_steps=200,
             logger=getLogger("Overfit One Batch"),
         ),
-        checks=[CheckScoreLessThan(metric=METRICS[4], value=1 - 0.80)],
+        checks=[CheckScoreLessThan(metric=METRICS[4], value=1 - 0.05)],
     )
     project.add_step(
         step=Overfit(
             model,
             max_epochs=100,
             logger=getLogger("Overfit"),
-            model_kwargs=dict(lr=3e-4),
+            model_kwargs=dict(lr=3e-4, train_type=train_type),
             trainer_kwargs={"check_val_every_n_epoch": 1},
         ),
         checks=[CheckScoreLessThan(metric=METRICS[4], value=1 - 0.79)],
@@ -89,7 +87,7 @@ def main():
         Regularize(
             model,
             trainer_kwargs=dict(max_epochs=10),
-            model_kwargs=dict(lr=1e-4),
+            model_kwargs=dict(lr=1e-4, train_type=train_type),
             logger=getLogger("Regularize"),
         ),
         checks=[CheckScoreGreaterThan(metric=METRICS[3], value=0.70)],
