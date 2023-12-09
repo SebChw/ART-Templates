@@ -11,7 +11,24 @@ from transformers import AutoModel
 from utils import batchify, extract_queries, make_recipe_string
 
 from art.loggers import art_logger
-from art.steps import ExploreData, Step
+from art.steps import ExploreData, OverfitOneBatch, Step
+
+
+class CustomOverfitOneBatch(OverfitOneBatch):
+    def __init__(
+        self,
+        model,
+        number_of_steps: int = 50,
+        model_kwargs: Dict = {},
+        logger=None,
+    ):
+        super().__init__(model, number_of_steps, model_kwargs, logger)
+
+    def do(self, previous_states: Dict):
+        self.datamodule.setup(stage="train")
+        self.datamodule.train_subset.overfit_one_batch = True
+        super().do(previous_states)
+        self.datamodule.train_subset.overfit_one_batch = False
 
 
 class DataPreparation(Step):

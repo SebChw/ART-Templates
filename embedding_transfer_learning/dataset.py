@@ -60,7 +60,11 @@ class EmbeddingDataset(Dataset):
 
     def __getitem__(self, idx):
         # Select recipe - these are ordered
-        recipe_id = self.processed_in_batch % self.n_recipies
+        if self.overfit_one_batch:
+            recipe_id, selected_query = self.data_to_overfit[idx]
+        else:
+            recipe_id = self.processed_in_batch % self.n_recipies
+
         recipe_id = self.recipes_id_in_dataset[recipe_id]
 
         # Select query that was not used before
