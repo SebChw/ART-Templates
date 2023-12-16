@@ -1,76 +1,196 @@
+import json
 import random
 from collections import defaultdict
+from enum import Enum
 
 import pandas as pd
 import torch
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
 
-from common import FINAL_DATA_PARQUET_TRAIN, FINAL_DATA_PARQUET_VALID, FINAL_DATA_PARQUET_TEST
+
+class Split(Enum):
+    train = "train"
+    valid = "valid"
+    test = "test"
+
+
+class TrainType(Enum):
+    text = "text"
+    graph = "graph"
+    test = "both"
+
+
+from common import GRAPH_EMB_PATH, QUERIES_PATH, RECIPIES_PATH, SPLIT_PATH
 
 
 class EmbeddingDataset(Dataset):
-    def __init__(self, df: pd.DataFrame):
+    def __init__(
+        self,
+        split: Split,
+        batch_size: int,
+        queries: pd.DataFrame,
+        recipes: pd.DataFrame,
+        graph_embeddings: pd.DataFrame,
+        use_text_embeddings: bool = True,
+        use_graph_embeddings: bool = True,
+    ):
         super().__init__()
-        self.df = df
-        self.df_recipe = df.drop(columns=["query_id", "query_embeddings"]).drop_duplicates(subset=["recipe_id"]).reset_index(drop=True)
-        self.n_queries = len(df)
-        #groupby query_id and calc len
-        self.n_recipies = len(self.df_recipe)
+        self.use_text_embeddings = use_text_embeddings
+        self.use_graph_embeddings = use_graph_embeddings
+        with open(SPLIT_PATH) as f:
+            splits_with_id = json.load(f)
+            self.recipes_id_in_dataset = splits_with_id[split.value]
 
-    def setup(self):
-        self.recipe_to_query = defaultdict(list)
-        recipe_id_list = self.df_recipe['recipe_id'].tolist()
-        self.recipe_id_to_index = {recipe_id_list[i]:i for i in range(self.n_recipies)}
-        query_id_list = self.df['query_id'].tolist()
-        self.query_id_to_index = {query_id_list[i]:i for i in range(self.n_queries)}
-        grouped = self.df.groupby('recipe_id')['query_id'].apply(list)
-        for recipe_id, query_ids in tqdm(grouped.items(), total=len(grouped)):
-            recipe_index = self.recipe_id_to_index[recipe_id]
-            self.recipe_to_query[recipe_index].extend([self.query_id_to_index[q_id] for q_id in query_ids])
-        self.recipe_embeddings = torch.stack([torch.tensor(x, dtype=torch.float32) for x in self.df_recipe['recipe_embeddings'].tolist()], 0)
-        self.recipe_texts = self.df_recipe["recipe_merged_info"].to_list()
+        # it has recipe_id, list of query embeddings
+        self.queries = {
+            recipe_id: queries[queries.recipe_id == recipe_id]
+            for recipe_id in self.recipes_id_in_dataset
+        }
 
-        self.query_embeddings = torch.stack([torch.tensor(x, dtype=torch.float32) for x in self.df['query_embeddings'].tolist()], 0)
-        self.query_texts = self.df["query"].to_list()
+        self.recipes = recipes.loc[self.recipes_id_in_dataset]
+
+        self.graph_embeddings = []
+        if use_graph_embeddings:
+            self.graph_embeddings = graph_embeddings.loc[self.recipes_id_in_dataset]
+
+        self.n_queries = sum([len(q) for q in self.queries.values()])
+        self.n_recipies = max(len(self.recipes), len(self.graph_embeddings))
+
+        self.batch_size = batch_size
+
+        self.return_text = False
+
+        self.overfit_one_batch = False
+        self.data_to_overfit = [
+            (recipe_num, 0) for recipe_num in range(self.batch_size)
+        ]
+        # we govern shuffling by ourselfes
+        self.reset_dataset()
 
     def __len__(self):
-        return self.n_recipies
+        return self.n_queries
 
     def __getitem__(self, idx):
-        query_id = random.choice(self.recipe_to_query[idx])
+        # Select recipe - these are ordered
+        if self.overfit_one_batch:
+            recipe_id, selected_query = self.data_to_overfit[idx]
+        else:
+            recipe_id = self.processed_in_batch % self.n_recipies
 
+        recipe_id = self.recipes_id_in_dataset[recipe_id]
+
+        # Select query that was not used before
+        available_queries = self.queries[recipe_id]
+        n_queries = len(available_queries)
+        selected_query = random.choice(
+            list(set(range(n_queries)) - self.already_used_queries[recipe_id])
+        )
+
+        selected_query = self.queries[recipe_id].iloc[selected_query]
+
+        # update dataset state
+        self.processed_in_batch += 1
+        if self.processed_in_batch == self.n_queries and not self.overfit_one_batch:
+            self.reset_dataset()
+
+        if self.return_text:
+            return {
+                "query_texts": selected_query.query,
+                "recipe_texts": self.recipes.loc[recipe_id].recipe_merged_info,
+                "recipe_embeddings": self.build_recipe_embedding(recipe_id),
+                "query_embeddings": torch.Tensor(selected_query.query_embeddings),
+            }
         return {
-            "recipe_texts": self.recipe_texts[idx],
-            "recipe_embeddings": self.recipe_embeddings[idx],
-            "query_texts": self.query_texts[query_id],
-            "query_embeddings": self.query_embeddings[query_id],
+            "recipe_embeddings": self.build_recipe_embedding(recipe_id),
+            "query_embeddings": torch.Tensor(selected_query.query_embeddings),
         }
+
+    def build_recipe_embedding(self, recipe_id):
+        if self.use_graph_embeddings and self.use_text_embeddings:
+            text_emb = self.recipes.loc[recipe_id].recipe_embeddings
+            graph_emb = self.graph_embeddings.loc[recipe_id].embedding
+            return torch.cat([torch.Tensor(text_emb), torch.Tensor(graph_emb)])
+        elif self.use_text_embeddings:
+            return torch.Tensor(self.recipes.loc[recipe_id].recipe_embeddings)
+
+        return torch.Tensor(self.graph_embeddings.loc[recipe_id].embedding)
+
+    def reset_dataset(self):
+        self.processed_in_batch = 0
+        random.shuffle(self.recipes_id_in_dataset)
+        self.already_used_queries = defaultdict(set)
 
 
 class EmbeddingDataModule(LightningDataModule):
-    def __init__(self, batch_size=10, num_workers=6):
+    def __init__(self, train_type: TrainType, batch_size=10, num_workers=6):
         super().__init__()
+        self.train_type = train_type
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.is_setup = False
 
     def setup(self, stage=None):
-        self.train_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_TRAIN))
-        self.train_subset.setup()
-        self.val_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_VALID))
-        self.val_subset.setup()
-        self.test_subset = EmbeddingDataset(pd.read_parquet(FINAL_DATA_PARQUET_TEST))
-        self.test_subset.setup()
+        if not self.is_setup:
+            queries = pd.read_parquet(QUERIES_PATH)
+            recipes = pd.read_parquet(RECIPIES_PATH).set_index("id")
+            graph_embeddings = pd.read_parquet(GRAPH_EMB_PATH).set_index("recipe_id")
 
-    def train_dataloader(self):
-        return DataLoader(self.train_subset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+            use_text_embeddings, use_graph_embeddings = False, False
+            if self.train_type == TrainType.text:
+                use_text_embeddings = True
+            elif self.train_type == TrainType.graph:
+                use_graph_embeddings = True
+            else:
+                use_text_embeddings, use_graph_embeddings = True, True
 
-    def val_dataloader(self):
-        return DataLoader(self.val_subset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
+            self.train_subset = EmbeddingDataset(
+                Split.train,
+                self.batch_size,
+                queries,
+                recipes,
+                graph_embeddings,
+                use_text_embeddings,
+                use_graph_embeddings,
+            )
+            self.val_subset = EmbeddingDataset(
+                Split.valid,
+                self.batch_size,
+                queries,
+                recipes,
+                graph_embeddings,
+                use_text_embeddings,
+                use_graph_embeddings,
+            )
+            self.test_subset = EmbeddingDataset(
+                Split.test,
+                self.batch_size,
+                queries,
+                recipes,
+                graph_embeddings,
+                use_text_embeddings,
+                use_graph_embeddings,
+            )
 
-    def test_dataloader(self):
-        return DataLoader(self.test_subset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
+            self.is_setup = True
+
+    def get_loader(self, dataset, return_text):
+        dataset.return_text = return_text
+        return DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
+
+    def train_dataloader(self, return_text=False):
+        return self.get_loader(self.train_subset, return_text)
+
+    def val_dataloader(self, return_text=False):
+        return self.get_loader(self.val_subset, return_text)
+
+    def test_dataloader(self, return_text=False):
+        return self.get_loader(self.test_subset, return_text)
 
     def log_params(self):
         return {
@@ -79,4 +199,3 @@ class EmbeddingDataModule(LightningDataModule):
             "val_samples": len(self.val_subset),
             "test_samples": len(self.test_subset),
         }
-
