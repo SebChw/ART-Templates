@@ -23,6 +23,7 @@ from art.utils.enums import (
 class EmbeddingModel(ArtModule):
     def __init__(self, model_query, model_recipe=None, lr=1e-3, batch_size=32):
         super().__init__()
+        self.save_hyperparameters(ignore=["model_query", "model_recipe"])
         self.lr = lr
         self.batch_size = batch_size
         self.model_query = model_query
@@ -72,7 +73,7 @@ class EmbeddingModel(ArtModule):
 
 class EmbeddingBaseline(EmbeddingModel):
     def __init__(self, lr=1e-3, batch_size=32):
-        super().__init__(nn.Identity(), lr, batch_size)
+        super().__init__(nn.Identity(), nn.Identity(), lr, batch_size)
 
     def ml_train(self, data):
         pass
@@ -88,6 +89,7 @@ class EmbeddingBaseline(EmbeddingModel):
 
 class EmbeddingHead(EmbeddingModel):
     def __init__(self, train_type=TrainType.text, lr=1e-1, batch_size=32):
+        self.save_hyperparameters()
         self.train_type = train_type
 
         embedding_dim, output_dim = 512, 512
@@ -95,13 +97,10 @@ class EmbeddingHead(EmbeddingModel):
             nn.Linear(in_features=embedding_dim, out_features=output_dim),
             nn.ReLU(),
             nn.Linear(in_features=output_dim, out_features=output_dim),
-            nn.ReLU(),
-            nn.Linear(in_features=output_dim, out_features=output_dim),
-            nn.ReLU(),
-            nn.Linear(in_features=output_dim, out_features=output_dim),
         )
         if self.train_type == TrainType.text:
             super().__init__(
+                model_query,
                 model_query,
                 lr,
                 batch_size,
@@ -110,10 +109,6 @@ class EmbeddingHead(EmbeddingModel):
             embedding_dim, output_dim = 200, 200
             model_recipe = nn.Sequential(
                 nn.Linear(in_features=embedding_dim, out_features=output_dim),
-                nn.ReLU(),
-                nn.Linear(in_features=output_dim, out_features=output_dim),
-                nn.ReLU(),
-                nn.Linear(in_features=output_dim, out_features=output_dim),
                 nn.ReLU(),
                 nn.Linear(in_features=output_dim, out_features=512),
             )
