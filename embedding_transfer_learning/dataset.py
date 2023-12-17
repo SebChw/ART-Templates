@@ -18,7 +18,7 @@ class Split(Enum):
 class TrainType(Enum):
     text = "text"
     graph = "graph"
-    test = "both"
+    both = "both"
 
 
 from common import GRAPH_EMB_PATH, QUERIES_PATH, RECIPIES_PATH, SPLIT_PATH

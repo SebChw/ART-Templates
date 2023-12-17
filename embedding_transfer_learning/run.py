@@ -28,7 +28,7 @@ def main():
 
     args = parser.parse_args()
 
-    train_type = TrainType.graph
+    train_type = TrainType.both
 
     project_name = "embedding_transfer_learning"
     data_module = EmbeddingDataModule(

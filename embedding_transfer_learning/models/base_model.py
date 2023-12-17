@@ -99,27 +99,24 @@ class EmbeddingHead(EmbeddingModel):
             nn.Linear(in_features=output_dim, out_features=output_dim),
         )
         if self.train_type == TrainType.text:
-            super().__init__(
-                model_query,
-                model_query,
-                lr,
-                batch_size,
-            )
+            model_recipe = model_query
         elif self.train_type == TrainType.graph:
-            embedding_dim, output_dim = 200, 200
+            embedding_dim, output_dim = 200, 512
             model_recipe = nn.Sequential(
-                nn.Linear(in_features=embedding_dim, out_features=output_dim),
+                nn.Linear(in_features=embedding_dim, out_features=embedding_dim),
                 nn.ReLU(),
-                nn.Linear(in_features=output_dim, out_features=512),
+                nn.Linear(in_features=embedding_dim, out_features=output_dim),
             )
-            super().__init__(
-                model_query,
-                model_recipe,
-                lr,
-                batch_size,
-            )
+
         else:
-            embedding_dim, output_dim = 712, 712
+            embedding_dim, output_dim = 712, 512
+            model_recipe = nn.Sequential(
+                nn.Linear(in_features=embedding_dim, out_features=embedding_dim),
+                nn.ReLU(),
+                nn.Linear(in_features=embedding_dim, out_features=output_dim),
+            )
+
+        super().__init__(model_query, model_recipe, lr, batch_size)
 
         self.embedding_dim = embedding_dim
         self.output_dim = output_dim
